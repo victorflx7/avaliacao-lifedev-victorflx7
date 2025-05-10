@@ -1,7 +1,7 @@
-import styles from "./Register.module.css"
-
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuthentication } from "../../hooks/useAuthentication"
+import styles from './Register.module.css'
 
 const Register = () => {
   const [displayName, setDisplayName] = useState("")
@@ -9,35 +9,47 @@ const Register = () => {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
+  const navigate = useNavigate();
 
   const { createUser, error: authError, loading } = useAuthentication()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     setError("")
 
-    const user = {
-      displayName,
-      email,
-      password,
-    }
+ if (password.length < 6) {
+  setError("As senhas deve ter pelo menos 6 caracteres");
+  return;
+ }
 
     if (password !== confirmPassword) {
       setError("As senhas precisam ser iguais.")
       return
     }
 
-    const res = await createUser(user)
+    try {
+      const user = {
+        displayName,
+        email,
+        password,
+      };
+    const res = await createUser(user);
 
-    console.log(res)
-  }
+      if (res && res.user) {
+        navigate('/dashboard');
+      }
+
+    } catch(err) {
+      console.error("Erro no registro", err);
+      setError(err.message || "Ocorreu um erro ao registrar.");
+    }
+  };
 
   useEffect(() => {
     if (authError) {
       setError(authError)
     }
-  }, [authError])
+  }, [authError]);
 
   return (
     <div className={styles.register}>
@@ -88,13 +100,16 @@ const Register = () => {
             value={confirmPassword}
           />
         </label>
-        {!loading && <button className="btn">Entrar</button>}
-        {loading && (
-          <button className="btn" disabled>
-            Aguarde...
-          </button>
-        )}
-        {error && <p className="error">{error}</p>}
+
+        {error && <p className={styles.error}>{error}</p>}
+
+        <button className={styles.btn}
+        type='submit'
+        disabled={loading}
+        >
+          {loading ? "Aguarde..." : "Cadastrar"}
+
+        </button>
       </form>
     </div>
   )
